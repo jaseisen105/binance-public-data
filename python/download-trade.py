@@ -7,13 +7,18 @@
   e.g. STORE_DIRECTORY=/data/ ./download-trade.py
 
 """
+import os
 
+import ccxt
+import gzip
+import shutil
 import sys
-from datetime import *
+import boto3 as boto3
+import logging
 import pandas as pd
+
 from enums import *
-from utility import download_file, get_all_symbols, get_parser, get_start_end_date_objects, convert_to_date_object, \
-    get_path
+from utility import download_file, get_all_symbols, get_parser, convert_to_date_object, get_path
 
 
 def download_monthly_trades(trading_type, symbols, num_symbols, years, months, start_date, end_date, folder, checksum):
@@ -76,10 +81,24 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date,
         print("[{}/{}] - start download daily {} trades ".format(current + 1, num_symbols, symbol))
         for date in dates:
             current_date = convert_to_date_object(date)
-            if current_date >= start_date and current_date <= end_date:
+            if start_date <= current_date <= end_date:
                 path = get_path(trading_type, "trades", "daily", symbol)
                 file_name = "{}-trades-{}.zip".format(symbol.upper(), date)
                 download_file(path, file_name, date_range, folder)
+                shutil.unpack_archive(f"{path}{file_name}", path)
+
+                unzipped_file = file_name.replace(".zip", ".csv")
+                gzip_file = "binance-" + file_name.replace(".zip", ".gz")
+                with open(f"{path}{unzipped_file}", "rb") as f, gzip.open(f"{path}{gzip_file}", "wb") as out:
+                    out.writelines(f)
+
+                s3 = boto3.client('s3')
+                s3.upload_file(f"{path}{gzip_file}", "exchange-daily-trades", gzip_file)
+                print(f"uploaded {gzip_file} to daily trades bucket")
+
+                os.remove(f"{path}{gzip_file}")
+                os.remove(f"{path}{unzipped_file}")
+                os.remove(f"{path}{file_name}")
 
                 if checksum == 1:
                     checksum_path = get_path(trading_type, "trades", "daily", symbol)
