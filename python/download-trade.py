@@ -112,7 +112,7 @@ def upload_binance_trade_files():
     dates = pd.date_range(end=datetime.today().date(), periods=30).to_pydatetime().tolist()
     dates = [date.strftime("%Y-%m-%d") for date in dates]
     start_date = datetime.utcnow().date() - timedelta(days=30)
-    download_daily_trades("spot", symbols, len(symbols), dates, start_date, datetime.utcnow().date(), None)
+    download_daily_trades("spot", symbols, len(symbols), dates, start_date, datetime.utcnow().date() - timedelta(days=1), None)
 
 
 if __name__ == "__main__":
