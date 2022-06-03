@@ -67,19 +67,19 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date,
                 path = get_path(trading_type, "trades", "daily", symbol)
                 file_name = "{}-trades-{}.zip".format(symbol.upper(), date)
                 download_file(path, file_name, date_range, folder)
-                shutil.unpack_archive(f"{path}{file_name}", path)
 
-                unzipped_file = file_name.replace(".zip", ".csv")
-                gzip_file = "binance-" + file_name.replace(".zip", ".gz")
-                with open(f"{path}{unzipped_file}", "rb") as f, gzip.open(f"{path}{gzip_file}", "wb") as out:
-                    out.writelines(f)
+                # shutil.unpack_archive(f"{path}{file_name}", path)
+                # unzipped_file = file_name.replace(".zip", ".csv")
+                # gzip_file = "binance-" + file_name.replace(".zip", ".gz")
+                # with open(f"{path}{unzipped_file}", "rb") as f, gzip.open(f"{path}{gzip_file}", "wb") as out:
+                #     out.writelines(f)
 
                 s3 = boto3.client('s3')
-                s3.upload_file(f"{path}{gzip_file}", "exchange-daily-trades", gzip_file)
-                log.info(f"uploaded {gzip_file} to daily trades bucket")
+                s3.upload_file(f"{path}{file_name}", "exchange-daily-trades", file_name)
+                log.info(f"uploaded {file_name} to daily trades bucket")
 
-                os.remove(f"{path}{gzip_file}")
-                os.remove(f"{path}{unzipped_file}")
+                # os.remove(f"{path}{gzip_file}")
+                # os.remove(f"{path}{unzipped_file}")
                 os.remove(f"{path}{file_name}")
 
         current += 1
