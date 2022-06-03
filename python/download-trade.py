@@ -51,7 +51,7 @@ def download_monthly_trades(trading_type, symbols, num_symbols, years, months, s
         current += 1
 
 
-def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date, end_date, folder):
+def download_daily_trades(trading_type, symbols, num_symbols, dates, folder):
     current = 0
     date_range = None
 
@@ -61,29 +61,27 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date,
         if "USDT" not in symbol:
             continue
         log.info("[{}/{}] - start download daily {} trades ".format(current + 1, num_symbols, symbol))
-        for date in dates:
-            current_date = convert_to_date_object(date)
-            if start_date <= current_date <= end_date:
-                try:
-                    path = get_path(trading_type, "trades", "daily", symbol)
-                    file_name = "{}-trades-{}.zip".format(symbol.upper(), date)
-                    download_file(path, file_name, date_range, folder)
+        for current_date in dates:
+            try:
+                path = get_path(trading_type, "trades", "daily", symbol)
+                file_name = "{}-trades-{}.zip".format(symbol.upper(), current_date)
+                download_file(path, file_name, date_range, folder)
 
-                    # shutil.unpack_archive(f"{path}{file_name}", path)
-                    # unzipped_file = file_name.replace(".zip", ".csv")
-                    # gzip_file = "binance-" + file_name.replace(".zip", ".gz")
-                    # with open(f"{path}{unzipped_file}", "rb") as f, gzip.open(f"{path}{gzip_file}", "wb") as out:
-                    #     out.writelines(f)
+                # shutil.unpack_archive(f"{path}{file_name}", path)
+                # unzipped_file = file_name.replace(".zip", ".csv")
+                # gzip_file = "binance-" + file_name.replace(".zip", ".gz")
+                # with open(f"{path}{unzipped_file}", "rb") as f, gzip.open(f"{path}{gzip_file}", "wb") as out:
+                #     out.writelines(f)
 
-                    s3 = boto3.client('s3')
-                    s3.upload_file(f"{path}{file_name}", "exchange-daily-trades", f"binance-{file_name}")
-                    log.info(f"uploaded {file_name} to daily trades bucket")
+                s3 = boto3.client('s3')
+                s3.upload_file(f"{path}{file_name}", "exchange-daily-trades", f"binance-{file_name}")
+                log.info(f"uploaded {file_name} to daily trades bucket")
 
-                    # os.remove(f"{path}{gzip_file}")
-                    # os.remove(f"{path}{unzipped_file}")
-                    os.remove(f"{path}{file_name}")
-                except:
-                    log.exception(f"failed to download {current} {symbol}")
+                # os.remove(f"{path}{gzip_file}")
+                # os.remove(f"{path}{unzipped_file}")
+                os.remove(f"{path}{file_name}")
+            except:
+                log.exception(f"failed to download {current} {symbol}")
 
         current += 1
 
@@ -113,10 +111,7 @@ def init_log(name, log_level=logging.INFO, use_file=True):
 def upload_binance_trade_files():
     symbols = get_all_symbols("t")
     dates = pd.date_range(end=datetime.today().date() - timedelta(days=30), periods=35).to_pydatetime().tolist()
-    dates = [date.strftime("%Y-%m-%d") for date in dates]
-    start_date = dates[0]
-    end_date = dates[-1]
-    download_daily_trades("spot", symbols, len(symbols), dates, start_date, end_date, None)
+    download_daily_trades("spot", symbols, len(symbols), dates, None)
 
 
 if __name__ == "__main__":
