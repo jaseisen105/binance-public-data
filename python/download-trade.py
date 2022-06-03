@@ -75,7 +75,7 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date,
                 #     out.writelines(f)
 
                 s3 = boto3.client('s3')
-                s3.upload_file(f"{path}{file_name}", "exchange-daily-trades", file_name)
+                s3.upload_file(f"{path}{file_name}", "exchange-daily-trades", f"binance-{file_name}")
                 log.info(f"uploaded {file_name} to daily trades bucket")
 
                 # os.remove(f"{path}{gzip_file}")
