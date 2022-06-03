@@ -1,24 +1,17 @@
 #!/usr/bin/env python
 
-"""
-  script to download trades.
-  set the absoluate path destination folder for STORE_DIRECTORY, and run
-
-  e.g. STORE_DIRECTORY=/data/ ./download-trade.py
-
-"""
 import os
-
-import ccxt
 import gzip
 import shutil
-import sys
 import boto3 as boto3
 import logging
 import pandas as pd
+from logging.handlers import TimedRotatingFileHandler
 
 from enums import *
-from utility import download_file, get_all_symbols, get_parser, convert_to_date_object, get_path
+from utility import download_file, get_all_symbols, convert_to_date_object, get_path
+
+log = logging.getLogger(__name__)
 
 
 def download_monthly_trades(trading_type, symbols, num_symbols, years, months, start_date, end_date, folder, checksum):
@@ -38,10 +31,10 @@ def download_monthly_trades(trading_type, symbols, num_symbols, years, months, s
     else:
         end_date = convert_to_date_object(end_date)
 
-    print("Found {} symbols".format(num_symbols))
+    log.info("Found {} symbols".format(num_symbols))
 
     for symbol in symbols:
-        print("[{}/{}] - start download monthly {} trades ".format(current + 1, num_symbols, symbol))
+        log.info("[{}/{}] - start download monthly {} trades ".format(current + 1, num_symbols, symbol))
         for year in years:
             for month in months:
                 current_date = convert_to_date_object('{}-{}-01'.format(year, month))
@@ -58,27 +51,16 @@ def download_monthly_trades(trading_type, symbols, num_symbols, years, months, s
         current += 1
 
 
-def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date, end_date, folder, checksum):
+def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date, end_date, folder):
     current = 0
     date_range = None
 
-    if start_date and end_date:
-        date_range = start_date + " " + end_date
-
-    if not start_date:
-        start_date = START_DATE
-    else:
-        start_date = convert_to_date_object(start_date)
-
-    if not end_date:
-        end_date = END_DATE
-    else:
-        end_date = convert_to_date_object(end_date)
-
-    print("Found {} symbols".format(num_symbols))
+    log.info("Found {} symbols".format(num_symbols))
 
     for symbol in symbols:
-        print("[{}/{}] - start download daily {} trades ".format(current + 1, num_symbols, symbol))
+        if "USDT" not in symbol:
+            continue
+        log.info("[{}/{}] - start download daily {} trades ".format(current + 1, num_symbols, symbol))
         for date in dates:
             current_date = convert_to_date_object(date)
             if start_date <= current_date <= end_date:
@@ -94,41 +76,45 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, start_date,
 
                 s3 = boto3.client('s3')
                 s3.upload_file(f"{path}{gzip_file}", "exchange-daily-trades", gzip_file)
-                print(f"uploaded {gzip_file} to daily trades bucket")
+                log.info(f"uploaded {gzip_file} to daily trades bucket")
 
                 os.remove(f"{path}{gzip_file}")
                 os.remove(f"{path}{unzipped_file}")
                 os.remove(f"{path}{file_name}")
 
-                if checksum == 1:
-                    checksum_path = get_path(trading_type, "trades", "daily", symbol)
-                    checksum_file_name = "{}-trades-{}.zip.CHECKSUM".format(symbol.upper(), date)
-                    download_file(checksum_path, checksum_file_name, date_range, folder)
-
         current += 1
 
 
+def init_log(name, log_level=logging.INFO, use_file=True):
+    try:
+        os.makedirs('logs', exist_ok=True)
+    except TypeError:
+        pass
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    logger = logging.getLogger()
+    logger.setLevel(log_level)
+    logger.addHandler(console_handler)
+
+    if use_file:
+        time_rotating_handler = TimedRotatingFileHandler(f"logs/{name}.log", when='midnight', backupCount=10)
+        time_rotating_handler.suffix = "%Y-%m-%d"
+        time_rotating_handler.setFormatter(formatter)
+        logger.addHandler(time_rotating_handler)
+
+
+def upload_binance_trade_files():
+    symbols = get_all_symbols("t")
+    dates = pd.date_range(end=datetime.today().date(), periods=30).to_pydatetime().tolist()
+    dates = [date.strftime("%Y-%m-%d") for date in dates]
+    start_date = datetime.utcnow().date() - timedelta(days=30)
+    download_daily_trades("spot", symbols, len(symbols), dates, start_date, datetime.utcnow().date(), None)
+
+
 if __name__ == "__main__":
-    parser = get_parser('trades')
-    args = parser.parse_args(sys.argv[1:])
-
-    if not args.symbols:
-        print("fetching all symbols from exchange")
-        symbols = get_all_symbols(args.type)
-        num_symbols = len(symbols)
-    else:
-        symbols = args.symbols
-        num_symbols = len(symbols)
-        print("fetching {} symbols from exchange".format(num_symbols))
-
-    if args.dates:
-        dates = args.dates
-    else:
-        period = convert_to_date_object(datetime.today().strftime('%Y-%m-%d')) - convert_to_date_object(
-            PERIOD_START_DATE)
-        dates = pd.date_range(end=datetime.today(), periods=period.days + 1).to_pydatetime().tolist()
-        dates = [date.strftime("%Y-%m-%d") for date in dates]
-        if args.skip_monthly == 0:
-            download_monthly_trades(args.type, symbols, num_symbols, args.years, args.months, args.startDate, args.endDate, args.folder, args.checksum)
-    if args.skip_daily == 0:
-        download_daily_trades(args.type, symbols, num_symbols, dates, args.startDate, args.endDate, args.folder, args.checksum)
+    init_log("binance-trade-files")
+    upload_binance_trade_files()
