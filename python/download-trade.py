@@ -64,7 +64,7 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, folder):
         for current_date in dates:
             try:
                 path = get_path(trading_type, "trades", "daily", symbol)
-                file_name = "{}-trades-{}.zip".format(symbol.upper(), current_date)
+                file_name = "{}-trades-{}.zip".format(symbol.upper(), current_date.date())
                 download_file(path, file_name, date_range, folder)
 
                 # shutil.unpack_archive(f"{path}{file_name}", path)
