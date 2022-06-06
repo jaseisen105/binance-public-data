@@ -113,7 +113,7 @@ def init_log(name, log_level=logging.INFO, use_file=True):
 
 def upload_binance_trade_files():
     symbols = get_all_symbols("t")
-    dates = pd.date_range(end=datetime.today().date() - timedelta(days=1), periods=1).to_pydatetime().tolist()
+    dates = pd.date_range(end=datetime.today().date() - timedelta(days=3), periods=1).to_pydatetime().tolist()
     download_daily_trades("spot", symbols, len(symbols), dates, None)
 
 
