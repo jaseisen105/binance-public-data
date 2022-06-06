@@ -67,7 +67,7 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, folder):
         for current_date in dates:
             try:
                 path = get_path(trading_type, "trades", "daily", symbol)
-                file_name = "{}-trades-{}.zip".format(symbol.upper(), current_date.date())
+                file_name = "{}-trades-{}.zip".format(symbol.upper(), current_date)
                 download_file(path, file_name, date_range, folder)
 
                 # shutil.unpack_archive(f"{path}{file_name}", path)
@@ -114,7 +114,7 @@ def init_log(name, log_level=logging.INFO, use_file=True):
 def upload_binance_trade_files(days):
     symbols = get_all_symbols("t")
     base = datetime.today().date()
-    date_list = [str(base - timedelta(days=x)) for x in range(days)]
+    date_list = [base - timedelta(days=x) for x in range(days)]
     log.info(f"dates: {date_list}")
     download_daily_trades("spot", symbols, len(symbols), date_list, None)
 
