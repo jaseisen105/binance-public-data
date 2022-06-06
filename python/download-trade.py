@@ -3,6 +3,8 @@
 import os
 import gzip
 import shutil
+import sys
+
 import boto3 as boto3
 import logging
 import pandas as pd
@@ -12,6 +14,7 @@ from enums import *
 from utility import download_file, get_all_symbols, convert_to_date_object, get_path
 
 log = logging.getLogger(__name__)
+os.chdir("/home/ubuntu/binance-public-data")
 
 
 def download_monthly_trades(trading_type, symbols, num_symbols, years, months, start_date, end_date, folder, checksum):
