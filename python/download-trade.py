@@ -111,12 +111,15 @@ def init_log(name, log_level=logging.INFO, use_file=True):
         logger.addHandler(time_rotating_handler)
 
 
-def upload_binance_trade_files():
+def upload_binance_trade_files(days):
     symbols = get_all_symbols("t")
-    dates = pd.date_range(end=datetime.today().date() - timedelta(days=3), periods=1).to_pydatetime().tolist()
+    dates = pd.date_range(end=datetime.today().date() - timedelta(days=days), periods=1).to_pydatetime().tolist()
     download_daily_trades("spot", symbols, len(symbols), dates, None)
 
 
 if __name__ == "__main__":
     init_log("binance-trade-files")
-    upload_binance_trade_files()
+    days = 1
+    if len(sys.argv) > 1:
+        days = int(sys.argv[1])
+    upload_binance_trade_files(days)
