@@ -6,3 +6,4 @@
 */__pycache__/
 python/data/
 *.log
+python/settings.py

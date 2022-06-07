@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
 import os
-import gzip
-import shutil
 import sys
-
 import boto3 as boto3
 import logging
-import pandas as pd
 from logging.handlers import TimedRotatingFileHandler
 
+from pymongo import MongoClient
+
 from enums import *
+from python import settings
 from utility import download_file, get_all_symbols, convert_to_date_object, get_path
 
 log = logging.getLogger(__name__)
@@ -59,10 +58,21 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, folder):
     date_range = None
 
     log.info("Found {} symbols".format(num_symbols))
+    db = MongoClient(settings.DB_URL)["test"]
 
     for symbol in symbols:
-        if "USDT" not in symbol:
+        quotes = ["USDT", "BTC", "ETH"]
+        asset = None
+        for q in quotes:
+            if symbol.endswith(q):
+                asset = symbol.split(q)[0]
+        if not asset:
             continue
+
+        doc = db.cmcdata.find_one({"symbol": asset})
+        if doc and doc["cmc_rank"] > 100:
+            continue
+
         log.info("[{}/{}] - start download daily {} trades ".format(current + 1, num_symbols, symbol))
         for current_date in dates:
             try:
