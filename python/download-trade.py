@@ -5,11 +5,10 @@ import sys
 import boto3 as boto3
 import logging
 from logging.handlers import TimedRotatingFileHandler
-
 from pymongo import MongoClient
 
+import settings
 from enums import *
-from python import settings
 from utility import download_file, get_all_symbols, convert_to_date_object, get_path
 
 log = logging.getLogger(__name__)
