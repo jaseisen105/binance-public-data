@@ -69,7 +69,7 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, folder):
             continue
 
         doc = db.cmcdata.find_one({"symbol": asset})
-        cmc_rank = doc["cmc_rank"]
+        cmc_rank = doc.get("cmc_rank")
         if not doc or cmc_rank > 100:
             continue
 
