@@ -70,10 +70,11 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, folder):
             continue
 
         doc = db.cmcdata.find_one({"symbol": asset})
-        if doc and doc["cmc_rank"] > 100:
+        cmc_rank = doc["cmc_rank"]
+        if doc and cmc_rank > 100:
             continue
 
-        log.info("[{}/{}] - start download daily {} trades ".format(current + 1, num_symbols, symbol))
+        log.info(f"downloading for {symbol=} with {cmc_rank=}")
         for current_date in dates:
             try:
                 path = get_path(trading_type, "trades", "daily", symbol)
