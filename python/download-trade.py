@@ -60,7 +60,7 @@ def download_daily_trades(trading_type, symbols, num_symbols, dates, folder):
     db = MongoClient(settings.DB_URL)["test"]
 
     for symbol in symbols:
-        quotes = ["USDT", "BTC", "ETH"]
+        quotes = ["USDT", "BTC", "ETH", "BUSD"]
         asset = None
         for q in quotes:
             if symbol.endswith(q):
