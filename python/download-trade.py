@@ -124,7 +124,7 @@ def init_log(name, log_level=logging.INFO, use_file=True):
 def upload_binance_trade_files(days):
     symbols = get_all_symbols("t")
     base = datetime.today().date()
-    date_list = [base - timedelta(days=x) for x in range(days + 1)]
+    date_list = [base - timedelta(days=x) for x in range(1, days + 1)]
     log.info(f"dates: {date_list}")
     download_daily_trades("spot", symbols, len(symbols), date_list, None)
 
