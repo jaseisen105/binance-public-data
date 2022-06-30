@@ -52,28 +52,17 @@ def download_monthly_trades(trading_type, symbols, num_symbols, years, months, s
         current += 1
 
 
-def download_daily_trades(trading_type, symbols, num_symbols, dates, folder):
+def download_daily_trades(trading_type, dates, folder):
     current = 0
     date_range = None
 
-    log.info("Found {} symbols".format(num_symbols))
     db = MongoClient(settings.DB_URL)["test"]
+    cursor = db.watchlist.find({"exchange": 'binance'})
+    for doc in cursor:
+        pair = doc["pair"]
+        symbol = pair.replace("/", "")
 
-    for symbol in symbols:
-        quotes = ["USDT", "BTC", "ETH", "BUSD"]
-        asset = None
-        for q in quotes:
-            if symbol.endswith(q):
-                asset = symbol.split(q)[0]
-        if not asset:
-            continue
-
-        doc = db.cmcdata.find_one({"symbol": asset})
-        if not doc or doc.get("cmc_rank") > 100:
-            continue
-        cmc_rank = doc.get("cmc_rank")
-
-        log.info(f"downloading for {symbol=} with {cmc_rank=}")
+        log.info(f"downloading for {symbol=}")
         for current_date in dates:
             try:
                 path = get_path(trading_type, "trades", "daily", symbol)
@@ -122,11 +111,10 @@ def init_log(name, log_level=logging.INFO, use_file=True):
 
 
 def upload_binance_trade_files(days):
-    symbols = get_all_symbols("t")
     base = datetime.today().date()
     date_list = [base - timedelta(days=x) for x in range(1, days + 1)]
     log.info(f"dates: {date_list}")
-    download_daily_trades("spot", symbols, len(symbols), date_list, None)
+    download_daily_trades("spot", date_list, None)
 
 
 if __name__ == "__main__":
